@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cursos - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span><span class="current">Cursos</span>
+    </nav>
+    <h1>Cursos</h1>
+    <div class="actions" id="actions-admin" hidden>
+        <a href="curso-form.html" class="btn">+ Nuevo curso</a>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr><th>Nombre</th><th>Descripcion</th><th>Cupos</th><th>Inscritos</th><th></th></tr>
+            </thead>
+            <tbody id="tbody-cursos"></tbody>
+        </table>
+        <p class="muted" id="sin-cursos" hidden>Aun no hay cursos cargados.</p>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const isAdmin = EduAuth.isAdmin();
+    if (isAdmin) document.getElementById('actions-admin').hidden = false;
+
+    function render() {
+        const cursos = EduData.getCursos();
+        const estudiantes = EduData.getEstudiantes();
+        const yo = estudiantes.find(function (e) { return e.id === EduAuth.estudianteDemoId; });
+        const tbody = document.getElementById('tbody-cursos');
+        tbody.innerHTML = '';
+
+        if (cursos.length === 0) {
+            document.getElementById('sin-cursos').hidden = false;
+        }
+
+        cursos.forEach(function (c) {
+            const inscritos = estudiantes.filter(function (e) { return e.cursos.indexOf(c.id) !== -1; }).length;
+            const tr = document.createElement('tr');
+
+            let accionesHtml = '';
+            if (isAdmin) {
+                accionesHtml =
+                    '<span class="row-actions">' +
+                    '<a href="curso-form.html?id=' + c.id + '" class="btn btn-sm btn-secondary btn-icon" title="Editar">' + EduIcons.pencil + '</a>' +
+                    '<button type="button" class="btn btn-sm btn-danger btn-icon" title="Eliminar" data-eliminar-curso="' + c.id + '">' + EduIcons.trash + '</button>' +
+                    '</span>';
+            } else {
+                const inscrito = yo && yo.cursos.indexOf(c.id) !== -1;
+                accionesHtml = inscrito
+                    ? '<span class="badge badge-user">Ya inscrito</span>'
+                    : '<button type="button" class="btn btn-sm" data-inscribirme="' + c.id + '">Inscribirme</button>';
+            }
+
+            tr.innerHTML =
+                '<td>' + c.nombre + '</td>' +
+                '<td>' + (c.descripcion || '') + '</td>' +
+                '<td>' + c.cupos + '</td>' +
+                '<td>' + inscritos + '</td>' +
+                '<td>' + accionesHtml + '</td>';
+            tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('[data-inscribirme]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const cursoId = Number(btn.getAttribute('data-inscribirme'));
+                const ests = EduData.getEstudiantes();
+                const est = ests.find(function (e) { return e.id === EduAuth.estudianteDemoId; });
+                if (est.cursos.indexOf(cursoId) === -1) est.cursos.push(cursoId);
+                EduData.saveEstudiantes(ests);
+                render();
+            });
+        });
+        tbody.querySelectorAll('[data-eliminar-curso]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!confirm('¿Eliminar este curso?')) return;
+                const cursoId = Number(btn.getAttribute('data-eliminar-curso'));
+                EduData.saveCursos(EduData.getCursos().filter(function (c) { return c.id !== cursoId; }));
+                EduData.saveEstudiantes(EduData.getEstudiantes().map(function (e) {
+                    e.cursos = e.cursos.filter(function (id) { return id !== cursoId; });
+                    return e;
+                }));
+                EduData.saveEvaluaciones(EduData.getEvaluaciones().filter(function (ev) { return ev.cursoId !== cursoId; }));
+                render();
+            });
+        });
+    }
+
+    render();
+</script>
+</body>
+</html>

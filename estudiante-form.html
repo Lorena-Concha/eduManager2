@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Estudiante - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span>
+        <a href="estudiantes.html">Estudiantes</a><span class="sep">/</span>
+        <span class="current" id="breadcrumb-actual"></span>
+    </nav>
+    <h1 id="titulo"></h1>
+
+    <div class="card">
+        <form id="form-estudiante">
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="apellido">Apellido</label>
+                <input type="text" id="apellido" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Correo</label>
+                <input type="email" id="email" required title="Debe ser un correo valido, ej: nombre@dominio.com">
+            </div>
+            <div class="form-group">
+                <label for="rut">RUT</label>
+                <input type="text" id="rut" placeholder="12345678-9" required
+                       pattern="[0-9]{7,8}-[0-9kK]" title="Formato de RUT invalido, debe ser: 12345678-9">
+            </div>
+            <div class="form-group">
+                <label for="telefono">Telefono</label>
+                <input type="text" id="telefono" required
+                       pattern="\+?[0-9 ]{7,15}" title="Formato de telefono invalido, ej: +56912345678">
+            </div>
+            <div class="form-group">
+                <label for="fechaNacimiento">Fecha de nacimiento</label>
+                <input type="date" id="fechaNacimiento" required>
+            </div>
+            <div class="form-group">
+                <label for="direccion">Direccion</label>
+                <input type="text" id="direccion" required>
+            </div>
+            <div class="form-group">
+                <label for="ciudad">Ciudad</label>
+                <input type="text" id="ciudad" required>
+            </div>
+            <div class="form-group">
+                <label for="fechaIngreso">Fecha de ingreso</label>
+                <input type="date" id="fechaIngreso" required>
+            </div>
+            <div class="form-group">
+                <label for="genero">Genero</label>
+                <select id="genero" required>
+                    <option value="">-- Selecciona --</option>
+                    <option value="MASCULINO">MASCULINO</option>
+                    <option value="FEMENINO">FEMENINO</option>
+                    <option value="OTRO">OTRO</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="estado">Estado</label>
+                <select id="estado" required>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                    <option value="EGRESADO">EGRESADO</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones" rows="3" maxlength="300"></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn">Guardar</button>
+                <a href="estudiantes.html" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    if (!EduAuth.isAdmin()) { window.location.href = 'dashboard.html'; }
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id') ? Number(params.get('id')) : null;
+    const estudiantes = EduData.getEstudiantes();
+    const estudiante = id ? estudiantes.find(function (e) { return e.id === id; }) : null;
+
+    document.getElementById('titulo').textContent = estudiante ? 'Editar estudiante' : 'Nuevo estudiante';
+    document.getElementById('breadcrumb-actual').textContent = estudiante ? 'Editar' : 'Nuevo';
+
+    if (estudiante) {
+        document.getElementById('nombre').value = estudiante.nombre;
+        document.getElementById('apellido').value = estudiante.apellido;
+        document.getElementById('email').value = estudiante.email;
+        document.getElementById('rut').value = estudiante.rut;
+        document.getElementById('telefono').value = estudiante.telefono;
+        document.getElementById('fechaNacimiento').value = estudiante.fechaNacimiento;
+        document.getElementById('direccion').value = estudiante.direccion;
+        document.getElementById('ciudad').value = estudiante.ciudad;
+        document.getElementById('fechaIngreso').value = estudiante.fechaIngreso;
+        document.getElementById('genero').value = estudiante.genero;
+        document.getElementById('estado').value = estudiante.estado;
+        document.getElementById('observaciones').value = estudiante.observaciones || '';
+    } else {
+        document.getElementById('fechaIngreso').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('estado').value = 'ACTIVO';
+    }
+
+    document.getElementById('form-estudiante').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const datos = {
+            nombre: document.getElementById('nombre').value.trim(),
+            apellido: document.getElementById('apellido').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            rut: document.getElementById('rut').value.trim(),
+            telefono: document.getElementById('telefono').value.trim(),
+            fechaNacimiento: document.getElementById('fechaNacimiento').value,
+            direccion: document.getElementById('direccion').value.trim(),
+            ciudad: document.getElementById('ciudad').value.trim(),
+            fechaIngreso: document.getElementById('fechaIngreso').value,
+            genero: document.getElementById('genero').value,
+            estado: document.getElementById('estado').value,
+            observaciones: document.getElementById('observaciones').value.trim(),
+        };
+
+        if (estudiante) {
+            Object.assign(estudiante, datos);
+        } else {
+            estudiantes.push(Object.assign({ id: EduData.nextId(estudiantes), cursos: [] }, datos));
+        }
+        EduData.saveEstudiantes(estudiantes);
+        window.location.href = 'estudiantes.html';
+    });
+</script>
+</body>
+</html>

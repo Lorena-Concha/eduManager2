@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Evaluaciones - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span><span class="current">Evaluaciones</span>
+    </nav>
+    <h1>Evaluaciones</h1>
+
+    <div id="vista-admin" hidden>
+        <div class="actions">
+            <a href="evaluacion-form.html" class="btn">+ Nueva evaluacion</a>
+        </div>
+        <div class="card">
+            <form id="form-buscar" class="actions" style="flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="margin-bottom:0; flex:1; min-width:200px;">
+                    <label for="q">Buscar por estudiante</label>
+                    <input type="text" id="q" placeholder="Ej: Garcia">
+                </div>
+                <div class="form-group" style="margin-bottom:0; min-width:200px;">
+                    <label for="cursoId">Curso</label>
+                    <select id="cursoId"><option value="">Todos</option></select>
+                </div>
+                <button type="submit" class="btn">Buscar</button>
+                <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+            </form>
+        </div>
+        <div class="card">
+            <table>
+                <thead><tr><th>Estudiante</th><th>Curso</th><th>Nota</th><th>Fecha</th><th>Comentario</th></tr></thead>
+                <tbody id="tbody-admin"></tbody>
+            </table>
+            <p class="muted" id="sin-resultados-admin" hidden>Aun no hay evaluaciones registradas.</p>
+        </div>
+    </div>
+
+    <div id="vista-usuario" hidden>
+        <p class="muted" id="sin-cursos-usuario" hidden>Aun no estas inscrito en ningun curso.</p>
+        <div id="tabs-container"></div>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const isAdmin = EduAuth.isAdmin();
+    const cursos = EduData.getCursos();
+    const estudiantes = EduData.getEstudiantes();
+
+    if (isAdmin) {
+        document.getElementById('vista-admin').hidden = false;
+        const select = document.getElementById('cursoId');
+        cursos.forEach(function (c) {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.nombre;
+            select.appendChild(opt);
+        });
+
+        function renderAdmin() {
+            const texto = document.getElementById('q').value.trim().toLowerCase();
+            const cursoFiltro = document.getElementById('cursoId').value;
+            let evaluaciones = EduData.getEvaluaciones();
+
+            if (texto) {
+                evaluaciones = evaluaciones.filter(function (ev) {
+                    const est = estudiantes.find(function (e) { return e.id === ev.estudianteId; });
+                    return est && (est.nombre.toLowerCase().indexOf(texto) !== -1 || est.apellido.toLowerCase().indexOf(texto) !== -1);
+                });
+            }
+            if (cursoFiltro) {
+                evaluaciones = evaluaciones.filter(function (ev) { return ev.cursoId === Number(cursoFiltro); });
+            }
+
+            const tbody = document.getElementById('tbody-admin');
+            tbody.innerHTML = '';
+            document.getElementById('sin-resultados-admin').hidden = evaluaciones.length !== 0;
+
+            evaluaciones.forEach(function (ev) {
+                const est = estudiantes.find(function (e) { return e.id === ev.estudianteId; });
+                const curso = cursos.find(function (c) { return c.id === ev.cursoId; });
+                const tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' + (est ? est.nombre + ' ' + est.apellido : '?') + '</td>' +
+                    '<td>' + (curso ? curso.nombre : '?') + '</td>' +
+                    '<td>' + ev.nota + '</td><td>' + ev.fecha + '</td><td>' + (ev.comentario || '') + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+        document.getElementById('form-buscar').addEventListener('submit', function (e) { e.preventDefault(); renderAdmin(); });
+        document.getElementById('btn-limpiar').addEventListener('click', function () {
+            document.getElementById('q').value = '';
+            document.getElementById('cursoId').value = '';
+            renderAdmin();
+        });
+        renderAdmin();
+    } else {
+        document.getElementById('vista-usuario').hidden = false;
+        const yo = estudiantes.find(function (e) { return e.id === EduAuth.estudianteDemoId; });
+        const misCursos = cursos.filter(function (c) { return yo.cursos.indexOf(c.id) !== -1; })
+            .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+        const evaluaciones = EduData.getEvaluaciones();
+
+        if (misCursos.length === 0) {
+            document.getElementById('sin-cursos-usuario').hidden = false;
+        } else {
+            let tabsHtml = '<div class="tabs">';
+            misCursos.forEach(function (c, i) {
+                tabsHtml += '<button type="button" id="tab-btn-' + i + '" class="tab-btn' + (i === 0 ? ' active' : '') + '" onclick="mostrarTab(' + i + ')">' + c.nombre + '</button>';
+            });
+            tabsHtml += '</div>';
+
+            misCursos.forEach(function (c, i) {
+                const delCurso = evaluaciones.filter(function (ev) { return ev.estudianteId === yo.id && ev.cursoId === c.id; });
+                tabsHtml += '<div class="card tab-panel' + (i === 0 ? '' : ' hidden') + '" id="tab-' + i + '">';
+                if (delCurso.length === 0) {
+                    tabsHtml += '<p class="muted">Aun no tienes evaluaciones en este curso.</p>';
+                } else {
+                    tabsHtml += '<table><thead><tr><th>Nota</th><th>Fecha</th><th>Comentario</th></tr></thead><tbody>';
+                    delCurso.forEach(function (ev) {
+                        tabsHtml += '<tr><td>' + ev.nota + '</td><td>' + ev.fecha + '</td><td>' + (ev.comentario || '') + '</td></tr>';
+                    });
+                    tabsHtml += '</tbody></table>';
+                }
+                tabsHtml += '</div>';
+            });
+            document.getElementById('tabs-container').innerHTML = tabsHtml;
+        }
+    }
+
+    function mostrarTab(indiceActivo) {
+        document.querySelectorAll('.tab-panel').forEach(function (panel, i) {
+            panel.classList.toggle('hidden', i !== indiceActivo);
+        });
+        document.querySelectorAll('.tab-btn').forEach(function (boton, i) {
+            boton.classList.toggle('active', i === indiceActivo);
+        });
+    }
+</script>
+</body>
+</html>

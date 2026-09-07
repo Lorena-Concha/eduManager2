@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Inicio - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div id="bienvenidaModal" class="modal-overlay" hidden>
+    <div class="modal-card">
+        <h2 id="modal-titulo"></h2>
+        <p class="muted" id="modal-texto"></p>
+        <div class="stats" style="justify-content:center; margin: 1.2rem 0;">
+            <div class="stat"><div class="value">CRUD</div><div class="label">Gestion de estudiantes</div></div>
+            <div class="stat"><div class="value">JWT</div><div class="label">API REST segura</div></div>
+            <div class="stat"><div class="value">Roles</div><div class="label">ADMIN / USER</div></div>
+        </div>
+        <button type="button" class="btn" id="btn-cerrar-modal">Entendido</button>
+    </div>
+</div>
+
+<div class="container">
+    <h1>Hola, <span id="nombre-usuario"></span></h1>
+    <span class="badge" id="badge-rol"></span>
+
+    <div class="card" style="margin-top:1.2rem;">
+        <h2>Resumen</h2>
+        <div class="stats" id="stats-resumen"></div>
+    </div>
+
+    <div class="card" id="card-mis-evaluaciones" hidden>
+        <h2>Mis evaluaciones recientes</h2>
+        <table id="tabla-mis-evaluaciones">
+            <thead><tr><th>Curso</th><th>Nota</th><th>Fecha</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <p class="muted" id="sin-evaluaciones" hidden>Todavia no tienes evaluaciones registradas.</p>
+    </div>
+
+    <div class="actions">
+        <a href="cursos.html" class="btn">Ver cursos</a>
+        <a href="evaluaciones.html" class="btn btn-secondary">Ver evaluaciones</a>
+        <a href="estudiantes.html" class="btn btn-secondary" id="link-estudiantes" hidden>Gestionar estudiantes</a>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const isAdmin = EduAuth.isAdmin();
+    const cursos = EduData.getCursos();
+    const estudiantes = EduData.getEstudiantes();
+    const evaluaciones = EduData.getEvaluaciones();
+    const yo = estudiantes.find(function (e) { return e.id === EduAuth.estudianteDemoId; });
+
+    document.getElementById('nombre-usuario').textContent = isAdmin ? 'admin' : (yo.nombre + ' ' + yo.apellido);
+    const badge = document.getElementById('badge-rol');
+    badge.textContent = isAdmin ? 'ADMINISTRADOR' : 'ESTUDIANTE';
+    badge.classList.add(isAdmin ? 'badge-admin' : 'badge-user');
+
+    const statsContainer = document.getElementById('stats-resumen');
+    let statsHtml =
+        '<div class="stat"><div class="value">' + cursos.length + '</div><div class="label">Cursos disponibles</div></div>';
+    if (isAdmin) {
+        statsHtml +=
+            '<div class="stat"><div class="value">' + estudiantes.length + '</div><div class="label">Estudiantes registrados</div></div>' +
+            '<div class="stat"><div class="value">' + evaluaciones.length + '</div><div class="label">Evaluaciones cargadas</div></div>';
+        document.getElementById('link-estudiantes').hidden = false;
+    } else {
+        document.getElementById('card-mis-evaluaciones').hidden = false;
+        const misEvaluaciones = evaluaciones.filter(function (ev) { return ev.estudianteId === yo.id; });
+        const tbody = document.querySelector('#tabla-mis-evaluaciones tbody');
+        if (misEvaluaciones.length === 0) {
+            document.getElementById('sin-evaluaciones').hidden = false;
+        } else {
+            misEvaluaciones.forEach(function (ev) {
+                const curso = cursos.find(function (c) { return c.id === ev.cursoId; });
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + (curso ? curso.nombre : '?') + '</td><td>' + ev.nota + '</td><td>' + ev.fecha + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+    }
+    statsContainer.innerHTML = statsHtml;
+
+    if (EduAuth.consumeShowWelcome()) {
+        const modal = document.getElementById('bienvenidaModal');
+        document.getElementById('modal-titulo').textContent = isAdmin
+            ? 'Bienvenido profesor Christian Sarmiento'
+            : 'Bienvenido a SpringEduManager';
+        document.getElementById('modal-texto').innerHTML = isAdmin
+            ? 'Deje un admin en duro y 2 usuarios estudiantes en duro para facilitar pruebas.<br>Muchas gracias por la dedicacion y energia entregada.'
+            : 'Plataforma educativa para administrar estudiantes, cursos y evaluaciones de un bootcamp.';
+        modal.hidden = false;
+        document.getElementById('btn-cerrar-modal').addEventListener('click', function () {
+            modal.hidden = true;
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ingresar - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+
+<div class="login-wrapper">
+    <div class="card">
+        <div class="brand-icon" id="icon-cap"></div>
+        <h1>SpringEduManager</h1>
+        <p class="muted" style="text-align:center;">Ingresa con tu cuenta</p>
+
+        <div class="alert alert-success" id="alert-registrado" hidden>
+            Cuenta creada. Ya puedes iniciar sesion.
+        </div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Contrasena</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn">Ingresar</button>
+                <a href="index.html" class="btn btn-secondary">Volver</a>
+            </div>
+        </form>
+
+        <p class="muted" style="margin-top:1rem; text-align:center;">
+            ¿Eres nuevo estudiante? <a href="registro.html">Registrate aqui</a>
+        </p>
+        <div class="muted" style="text-align:center; font-size:0.8rem; margin-top:0.5rem;">
+            <p style="margin:0 0 0.2rem;">Esto es una demo: cualquier usuario/contrasena te deja entrar.</p>
+            <p style="margin:0;">Una vez adentro, cambia de vista con el selector Admin / Estudiante.</p>
+        </div>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    document.getElementById('icon-cap').innerHTML = EduIcons.graduationCap.replace('width="16" height="16"', 'width="42" height="42"');
+    EduNav.renderDemoBanner();
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('registrado')) {
+        document.getElementById('alert-registrado').hidden = false;
+    }
+
+    document.getElementById('login-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        EduAuth.login();
+        window.location.href = 'dashboard.html';
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+
+<div class="login-wrapper">
+    <div class="card">
+        <h1>Crear cuenta</h1>
+        <p class="muted" style="text-align:center;">Registrate como estudiante</p>
+
+        <div class="alert alert-error" id="alert-error" hidden></div>
+
+        <form id="registro-form">
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="apellido">Apellido</label>
+                <input type="text" id="apellido" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Correo</label>
+                <input type="email" id="email" required title="Debe ser un correo valido, ej: nombre@dominio.com">
+            </div>
+            <div class="form-group">
+                <label for="rut">RUT</label>
+                <input type="text" id="rut" placeholder="12345678-9" required
+                       pattern="[0-9]{7,8}-[0-9kK]" title="Formato de RUT invalido, debe ser: 12345678-9">
+            </div>
+            <div class="form-group">
+                <label for="telefono">Telefono</label>
+                <input type="text" id="telefono" required
+                       pattern="\+?[0-9 ]{7,15}" title="Formato de telefono invalido, ej: +56912345678">
+            </div>
+            <div class="form-group">
+                <label for="fechaNacimiento">Fecha de nacimiento</label>
+                <input type="date" id="fechaNacimiento" required>
+            </div>
+            <div class="form-group">
+                <label for="direccion">Direccion</label>
+                <input type="text" id="direccion" required>
+            </div>
+            <div class="form-group">
+                <label for="ciudad">Ciudad</label>
+                <input type="text" id="ciudad" required>
+            </div>
+            <div class="form-group">
+                <label for="genero">Genero</label>
+                <select id="genero" required>
+                    <option value="">-- Selecciona --</option>
+                    <option value="MASCULINO">MASCULINO</option>
+                    <option value="FEMENINO">FEMENINO</option>
+                    <option value="OTRO">OTRO</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" required minlength="4" maxlength="40">
+            </div>
+            <div class="form-group">
+                <label for="password">Contrasena</label>
+                <input type="password" id="password" required minlength="6">
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn">Registrarme</button>
+                <a href="login.html" class="btn btn-secondary">Volver</a>
+            </div>
+        </form>
+
+        <p class="muted" style="margin-top:1rem; text-align:center;">
+            ¿Ya tienes cuenta? <a href="login.html">Ingresa aqui</a>
+        </p>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script>
+    document.getElementById('registro-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const rut = document.getElementById('rut').value.trim();
+        const estudiantes = EduData.getEstudiantes();
+
+        if (estudiantes.some(function (est) { return est.email === email; })) {
+            const alertBox = document.getElementById('alert-error');
+            alertBox.textContent = 'Ya existe un estudiante con ese correo (recorda que esta demo comparte datos en tu navegador).';
+            alertBox.hidden = false;
+            return;
+        }
+        if (estudiantes.some(function (est) { return est.rut === rut; })) {
+            const alertBox = document.getElementById('alert-error');
+            alertBox.textContent = 'Ya existe un estudiante con ese RUT.';
+            alertBox.hidden = false;
+            return;
+        }
+
+        const nuevo = {
+            id: EduData.nextId(estudiantes),
+            nombre: document.getElementById('nombre').value.trim(),
+            apellido: document.getElementById('apellido').value.trim(),
+            email: email,
+            rut: rut,
+            telefono: document.getElementById('telefono').value.trim(),
+            fechaNacimiento: document.getElementById('fechaNacimiento').value,
+            direccion: document.getElementById('direccion').value.trim(),
+            ciudad: document.getElementById('ciudad').value.trim(),
+            fechaIngreso: new Date().toISOString().slice(0, 10),
+            genero: document.getElementById('genero').value,
+            estado: 'ACTIVO',
+            observaciones: 'Registrado desde el formulario publico (demo).',
+            cursos: [],
+        };
+        estudiantes.push(nuevo);
+        EduData.saveEstudiantes(estudiantes);
+
+        window.location.href = 'login.html?registrado=1';
+    });
+</script>
+</body>
+</html>

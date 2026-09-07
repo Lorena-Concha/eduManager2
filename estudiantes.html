@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Estudiantes - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span><span class="current">Estudiantes</span>
+    </nav>
+    <h1>Estudiantes</h1>
+    <div class="actions">
+        <a href="estudiante-form.html" class="btn">+ Nuevo estudiante</a>
+    </div>
+
+    <div class="card">
+        <form id="form-buscar" class="actions" style="flex-wrap:wrap; align-items:flex-end;">
+            <div class="form-group" style="margin-bottom:0; flex:1; min-width:200px;">
+                <label for="q">Buscar por nombre o apellido</label>
+                <input type="text" id="q" placeholder="Ej: Garcia">
+            </div>
+            <div class="form-group" style="margin-bottom:0; min-width:180px;">
+                <label for="estado">Estado</label>
+                <select id="estado">
+                    <option value="">Todos</option>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                    <option value="EGRESADO">EGRESADO</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Buscar</button>
+            <button type="button" class="btn btn-secondary" id="btn-limpiar">Limpiar</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+            <tr><th>Nombre</th><th>Apellido</th><th>RUT</th><th>Correo</th><th>Estado</th><th>Cursos</th><th></th></tr>
+            </thead>
+            <tbody id="tbody-estudiantes"></tbody>
+        </table>
+        <p class="muted" id="sin-resultados" hidden>No se encontraron estudiantes con esos criterios.</p>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    if (!EduAuth.isAdmin()) { window.location.href = 'dashboard.html'; }
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    function render() {
+        const texto = document.getElementById('q').value.trim().toLowerCase();
+        const estadoFiltro = document.getElementById('estado').value;
+        let estudiantes = EduData.getEstudiantes();
+
+        if (texto) {
+            estudiantes = estudiantes.filter(function (e) {
+                return e.nombre.toLowerCase().indexOf(texto) !== -1 || e.apellido.toLowerCase().indexOf(texto) !== -1;
+            });
+        }
+        if (estadoFiltro) {
+            estudiantes = estudiantes.filter(function (e) { return e.estado === estadoFiltro; });
+        }
+
+        const tbody = document.getElementById('tbody-estudiantes');
+        tbody.innerHTML = '';
+        document.getElementById('sin-resultados').hidden = estudiantes.length !== 0;
+
+        estudiantes.forEach(function (e) {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + e.nombre + '</td>' +
+                '<td>' + e.apellido + '</td>' +
+                '<td>' + e.rut + '</td>' +
+                '<td>' + e.email + '</td>' +
+                '<td>' + e.estado + '</td>' +
+                '<td>' + e.cursos.length + '</td>' +
+                '<td><span class="row-actions">' +
+                '<a href="estudiante-detalle.html?id=' + e.id + '" class="btn btn-sm btn-secondary btn-icon" title="Ver">' + EduIcons.eye + '</a>' +
+                '<a href="estudiante-form.html?id=' + e.id + '" class="btn btn-sm btn-secondary btn-icon" title="Editar">' + EduIcons.pencil + '</a>' +
+                '<button type="button" class="btn btn-sm btn-danger btn-icon" title="Eliminar" data-eliminar="' + e.id + '">' + EduIcons.trash + '</button>' +
+                '</span></td>';
+            tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('[data-eliminar]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!confirm('¿Eliminar este estudiante?')) return;
+                const id = Number(btn.getAttribute('data-eliminar'));
+                EduData.saveEstudiantes(EduData.getEstudiantes().filter(function (e) { return e.id !== id; }));
+                EduData.saveEvaluaciones(EduData.getEvaluaciones().filter(function (ev) { return ev.estudianteId !== id; }));
+                render();
+            });
+        });
+    }
+
+    document.getElementById('form-buscar').addEventListener('submit', function (e) { e.preventDefault(); render(); });
+    document.getElementById('btn-limpiar').addEventListener('click', function () {
+        document.getElementById('q').value = '';
+        document.getElementById('estado').value = '';
+        render();
+    });
+
+    render();
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Nueva evaluacion - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span>
+        <a href="evaluaciones.html">Evaluaciones</a><span class="sep">/</span>
+        <span class="current">Nueva</span>
+    </nav>
+    <h1>Nueva evaluacion</h1>
+
+    <div class="card">
+        <form id="form-evaluacion">
+            <div class="form-group">
+                <label for="estudiante">Estudiante</label>
+                <select id="estudiante" required></select>
+            </div>
+            <div class="form-group">
+                <label for="curso">Curso</label>
+                <select id="curso" required></select>
+            </div>
+            <div class="form-group">
+                <label for="nota">Nota (1.0 a 7.0)</label>
+                <input type="number" id="nota" step="0.1" min="1" max="7" required>
+            </div>
+            <div class="form-group">
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" required>
+            </div>
+            <div class="form-group">
+                <label for="comentario">Comentario (opcional)</label>
+                <textarea id="comentario" rows="2"></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn">Guardar</button>
+                <a href="evaluaciones.html" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    if (!EduAuth.isAdmin()) { window.location.href = 'dashboard.html'; }
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const estudiantes = EduData.getEstudiantes();
+    const cursos = EduData.getCursos();
+
+    const selectEstudiante = document.getElementById('estudiante');
+    estudiantes.forEach(function (e) {
+        const opt = document.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.nombre + ' ' + e.apellido;
+        selectEstudiante.appendChild(opt);
+    });
+    const selectCurso = document.getElementById('curso');
+    cursos.forEach(function (c) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.nombre;
+        selectCurso.appendChild(opt);
+    });
+    document.getElementById('fecha').value = new Date().toISOString().slice(0, 10);
+
+    document.getElementById('form-evaluacion').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const evaluaciones = EduData.getEvaluaciones();
+        evaluaciones.push({
+            id: EduData.nextId(evaluaciones),
+            estudianteId: Number(selectEstudiante.value),
+            cursoId: Number(selectCurso.value),
+            nota: Number(document.getElementById('nota').value),
+            fecha: document.getElementById('fecha').value,
+            comentario: document.getElementById('comentario').value.trim(),
+        });
+        EduData.saveEvaluaciones(evaluaciones);
+        window.location.href = 'evaluaciones.html';
+    });
+</script>
+</body>
+</html>

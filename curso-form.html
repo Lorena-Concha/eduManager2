@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Curso - SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+<div id="nav-placeholder"></div>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="dashboard.html">Inicio</a><span class="sep">/</span>
+        <a href="cursos.html">Cursos</a><span class="sep">/</span>
+        <span class="current" id="breadcrumb-actual"></span>
+    </nav>
+    <h1 id="titulo"></h1>
+
+    <div class="card">
+        <form id="form-curso">
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="descripcion">Descripcion</label>
+                <textarea id="descripcion" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="cupos">Cupos</label>
+                <input type="number" id="cupos" min="1" required>
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn">Guardar</button>
+                <a href="cursos.html" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    EduAuth.requireLogin();
+    if (!EduAuth.isAdmin()) { window.location.href = 'cursos.html'; }
+    EduNav.renderDemoBanner();
+    EduNav.render();
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id') ? Number(params.get('id')) : null;
+    const cursos = EduData.getCursos();
+    const curso = id ? cursos.find(function (c) { return c.id === id; }) : null;
+
+    document.getElementById('titulo').textContent = curso ? 'Editar curso' : 'Nuevo curso';
+    document.getElementById('breadcrumb-actual').textContent = curso ? 'Editar' : 'Nuevo';
+
+    if (curso) {
+        document.getElementById('nombre').value = curso.nombre;
+        document.getElementById('descripcion').value = curso.descripcion || '';
+        document.getElementById('cupos').value = curso.cupos;
+    }
+
+    document.getElementById('form-curso').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const nombre = document.getElementById('nombre').value.trim();
+        const descripcion = document.getElementById('descripcion').value.trim();
+        const cupos = Number(document.getElementById('cupos').value);
+
+        if (curso) {
+            curso.nombre = nombre;
+            curso.descripcion = descripcion;
+            curso.cupos = cupos;
+        } else {
+            cursos.push({ id: EduData.nextId(cursos), nombre: nombre, descripcion: descripcion, cupos: cupos });
+        }
+        EduData.saveCursos(cursos);
+        window.location.href = 'cursos.html';
+    });
+</script>
+</body>
+</html>

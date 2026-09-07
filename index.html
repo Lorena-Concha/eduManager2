@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SpringEduManager (demo)</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="demo-banner-placeholder"></div>
+
+<nav class="navbar">
+    <div class="navbar-brand"><a href="index.html">SpringEduManager</a></div>
+    <div class="navbar-links">
+        <span id="anon-links">
+            <a href="login.html" class="btn btn-sm">Iniciar sesion</a>
+        </span>
+        <span id="auth-links" hidden>
+            <a href="dashboard.html" class="btn btn-sm">Ir a mi panel</a>
+        </span>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="card" style="text-align:center; padding:2.4rem 1.6rem;">
+        <div class="brand-icon" id="icon-cap"></div>
+        <h1>Bienvenido a SpringEduManager</h1>
+        <p class="muted">
+            Plataforma educativa para administrar estudiantes, cursos y evaluaciones de un bootcamp.
+        </p>
+        <div class="actions" style="justify-content:center;" id="anon-actions">
+            <a href="registro.html" class="btn">Registrarme como estudiante</a>
+            <a href="login.html" class="btn btn-secondary">Ya tengo cuenta</a>
+        </div>
+        <div class="actions" style="justify-content:center;" id="auth-actions" hidden>
+            <a href="dashboard.html" class="btn">Ir a mi panel</a>
+        </div>
+    </div>
+
+    <div class="stats" style="justify-content:center;">
+        <div class="stat"><div class="value">CRUD</div><div class="label">Gestion de estudiantes</div></div>
+        <div class="stat"><div class="value">JWT</div><div class="label">API REST segura</div></div>
+        <div class="stat"><div class="value">Roles</div><div class="label">ADMIN / USER</div></div>
+    </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/nav.js"></script>
+<script>
+    document.getElementById('icon-cap').innerHTML = EduIcons.graduationCap.replace('width="16" height="16"', 'width="42" height="42"');
+    EduNav.renderDemoBanner();
+    if (EduAuth.isLoggedIn()) {
+        document.getElementById('anon-links').hidden = true;
+        document.getElementById('auth-links').hidden = false;
+        document.getElementById('anon-actions').hidden = true;
+        document.getElementById('auth-actions').hidden = false;
+    }
+</script>
+</body>
+</html>
